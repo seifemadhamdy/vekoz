@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.hilt.android)
   alias(libs.plugins.dependency.analysis)
+  alias(libs.plugins.devtools.ksp)
   alias(libs.plugins.kotlin.kapt)
 }
 
@@ -74,6 +75,8 @@ dependencies {
   implementation(libs.hilt.android)
   implementation(libs.retrofit)
   implementation(libs.converter.gson)
+  implementation(libs.androidx.room.runtime)
+  implementation(libs.androidx.room.ktx)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
@@ -82,6 +85,10 @@ dependencies {
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.androidx.ui.test.manifest)
   kapt(libs.hilt.android.compiler)
+  ksp(libs.androidx.room.compiler)
 }
 
-kapt { correctErrorTypes = true }
+kapt {
+  correctErrorTypes = true
+  useBuildCache = true
+}
