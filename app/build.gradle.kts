@@ -73,6 +73,7 @@ dependencies {
   implementation(libs.androidx.ui.text.google.fonts)
   implementation(libs.androidx.core.splashscreen)
   implementation(libs.hilt.android)
+  implementation(libs.androidx.hilt.navigation.compose)
   implementation(libs.retrofit)
   implementation(libs.converter.gson)
   implementation(libs.androidx.room.runtime)

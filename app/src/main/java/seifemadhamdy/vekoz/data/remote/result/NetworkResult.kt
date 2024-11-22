@@ -1,4 +1,4 @@
-package seifemadhamdy.vekoz.data.remote.error
+package seifemadhamdy.vekoz.data.remote.result
 
 sealed class NetworkResult<out T> {
   data class Success<T>(val data: T) : NetworkResult<T>()

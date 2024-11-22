@@ -1,4 +1,4 @@
-package seifemadhamdy.vekoz.core.constants
+package seifemadhamdy.vekoz.presentation.ui.navigation
 
 sealed class VekozDestination(val route: String) {
   companion object {

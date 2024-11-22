@@ -9,12 +9,14 @@ class TmdbAuthInterceptor @Inject constructor() : Interceptor {
   override fun intercept(chain: Interceptor.Chain): Response {
     val originalRequest = chain.request()
 
-    val requestWithAuth =
+    val requestWithHeaders =
         originalRequest
             .newBuilder()
+            .addHeader("Accept", "application/json")
+            .addHeader("Content-Type", "application/json")
             .addHeader("Authorization", "Bearer ${BuildConfig.TMDB_ACCESS_TOKEN}")
             .build()
 
-    return chain.proceed(requestWithAuth)
+    return chain.proceed(requestWithHeaders)
   }
 }

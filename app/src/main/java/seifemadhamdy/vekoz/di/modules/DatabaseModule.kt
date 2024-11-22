@@ -18,20 +18,15 @@ import javax.inject.Singleton
 object DatabaseModule {
   @Provides
   @Singleton
-  fun provideWatchlistDatabase(@ApplicationContext context: Context): WatchlistDatabase {
-    return Room.databaseBuilder(context, WatchlistDatabase::class.java, "watchlist_database")
-        .build()
-  }
+  fun provideWatchlistDatabase(@ApplicationContext context: Context): WatchlistDatabase =
+      Room.databaseBuilder(context, WatchlistDatabase::class.java, "watchlist_database").build()
 
   @Provides
   @Singleton
-  fun provideWatchlistDao(database: WatchlistDatabase): WatchlistDao {
-    return database.watchlistDao()
-  }
+  fun provideWatchlistDao(database: WatchlistDatabase): WatchlistDao = database.watchlistDao()
 
   @Provides
   @Singleton
-  fun provideWatchlistRepository(watchlistDao: WatchlistDao): WatchlistRepository {
-    return WatchlistRepositoryImpl(watchlistDao)
-  }
+  fun provideWatchlistRepository(watchlistDao: WatchlistDao): WatchlistRepository =
+      WatchlistRepositoryImpl(watchlistDao)
 }

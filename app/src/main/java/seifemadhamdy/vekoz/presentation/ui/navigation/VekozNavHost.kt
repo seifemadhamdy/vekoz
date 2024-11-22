@@ -10,14 +10,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import seifemadhamdy.vekoz.core.constants.VekozDestination
 import seifemadhamdy.vekoz.presentation.screens.HomeScreen
 import seifemadhamdy.vekoz.presentation.screens.MovieDetailsScreen
 
 @Composable
 fun VekozNavHost(
     navHostController: NavHostController,
-    startDestination: String = VekozDestination.Home.route,
+    startDestination: String = VekozDestination.Home.route
 ) {
   NavHost(
       navController = navHostController,
