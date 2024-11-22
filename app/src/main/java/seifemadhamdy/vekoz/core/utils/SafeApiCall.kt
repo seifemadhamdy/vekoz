@@ -11,8 +11,6 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
 fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Flow<NetworkResult<T>> = flow {
-  emit(NetworkResult.Loading)
-
   try {
     val response = apiCall()
     val body = response.body()

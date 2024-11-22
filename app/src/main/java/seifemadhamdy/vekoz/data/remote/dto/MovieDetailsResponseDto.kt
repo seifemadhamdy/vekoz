@@ -20,16 +20,16 @@ data class MovieDetailsResponseDto(
     @SerializedName("popularity") var popularity: Double? = null,
     @SerializedName("poster_path") var posterPath: String? = null,
     @SerializedName("production_companies")
-    var movieDetailsProductionCompanyDtos: ArrayList<MovieDetailsProductionCompaniesDto> =
+    var movieDetailsProductionCompanyDto: ArrayList<MovieDetailsProductionCompaniesDto> =
         arrayListOf(),
     @SerializedName("production_countries")
-    var movieDetailsProductionCountryDtos: ArrayList<MovieDetailsProductionCountriesDto> =
+    var movieDetailsProductionCountryDto: ArrayList<MovieDetailsProductionCountriesDto> =
         arrayListOf(),
     @SerializedName("release_date") var releaseDate: String? = null,
     @SerializedName("revenue") var revenue: Int? = null,
     @SerializedName("runtime") var runtime: Int? = null,
     @SerializedName("spoken_languages")
-    var movieDetailsSpokenLanguageDtos: ArrayList<MovieDetailsSpokenLanguagesDto> = arrayListOf(),
+    var movieDetailsSpokenLanguageDto: ArrayList<MovieDetailsSpokenLanguagesDto> = arrayListOf(),
     @SerializedName("status") var status: String? = null,
     @SerializedName("tagline") var tagline: String? = null,
     @SerializedName("title") var title: String? = null,

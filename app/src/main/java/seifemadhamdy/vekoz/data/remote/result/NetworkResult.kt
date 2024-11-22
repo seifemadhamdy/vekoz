@@ -8,6 +8,4 @@ sealed class NetworkResult<out T> {
       val message: String? = null,
       val errorBody: String? = null,
   ) : NetworkResult<Nothing>()
-
-  object Loading : NetworkResult<Nothing>()
 }
