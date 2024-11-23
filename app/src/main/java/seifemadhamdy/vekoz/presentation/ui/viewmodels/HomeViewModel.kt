@@ -4,13 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import seifemadhamdy.vekoz.data.remote.dto.ResultsDto
 import seifemadhamdy.vekoz.data.remote.result.NetworkResult
@@ -44,7 +38,16 @@ constructor(
 
   private val _queriedMoviesUiState = MutableStateFlow<UiState<List<ResultsDto>>>(UiState.Loading)
   val queriedMoviesUiState: StateFlow<UiState<List<ResultsDto>>> =
-      _popularMoviesUiState.asStateFlow()
+      _queriedMoviesUiState.asStateFlow()
+
+  private val _isSearchBarVisible = MutableStateFlow<Boolean>(false)
+  val isSearchBarVisible: StateFlow<Boolean> = _isSearchBarVisible.asStateFlow()
+
+  private val _movieQuery = MutableStateFlow<String?>(null)
+  val movieQuery: StateFlow<String?> = _movieQuery.asStateFlow()
+
+  private val _watchlistStates = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+  val watchlistStates = _watchlistStates.asStateFlow()
 
   init {
     fetchPopularMovies()
@@ -64,12 +67,12 @@ constructor(
     }
   }
 
-  fun fetchMoviesByQuery(query: String) {
+  private fun fetchMoviesByQuery(query: String) {
     viewModelScope.launch {
       _queriedMoviesUiState.update { UiState.Loading }
 
       tmdbSearchRepository.getMoviesByQuery(query = query).collect { networkResult ->
-        _popularMoviesUiState.value =
+        _queriedMoviesUiState.value =
             when (networkResult) {
               is NetworkResult.Error -> UiState.Error(networkResult.message ?: "Unknown Error")
               is NetworkResult.Success -> UiState.Success(data = networkResult.data.results)
@@ -79,13 +82,42 @@ constructor(
   }
 
   fun addMovieToWatchlist(movieId: Int) {
-    viewModelScope.launch { watchlistRepository.addToWatchlist(movieId = movieId) }
+    viewModelScope.launch {
+      watchlistRepository.addToWatchlist(movieId = movieId)
+      _watchlistStates.update { it + (movieId to true) }
+    }
   }
 
   fun removeMovieFromWatchlist(movieId: Int) {
-    viewModelScope.launch { watchlistRepository.removeFromWatchlist(movieId = movieId) }
+    viewModelScope.launch {
+      watchlistRepository.removeFromWatchlist(movieId = movieId)
+      _watchlistStates.update { it + (movieId to false) }
+    }
   }
 
-  fun isMovieInWatchlist(movieId: Int): Flow<Boolean> =
-      flow { emit(watchlistRepository.isInWatchlist(movieId = movieId)) }.flowOn(Dispatchers.IO)
+  fun isMovieInWatchlist(movieId: Int): StateFlow<Boolean> =
+      watchlistStates
+          .map { it[movieId] == true }
+          .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+  fun initializeWatchlistState(movieId: Int) {
+    viewModelScope.launch(Dispatchers.IO) {
+      val isInWatchlist = watchlistRepository.isInWatchlist(movieId = movieId)
+      _watchlistStates.update { it + (movieId to isInWatchlist) }
+    }
+  }
+
+  fun toggleSearchBarVisibility() {
+    resetMovieQuery()
+    _isSearchBarVisible.update { !it }
+  }
+
+  fun updateMovieQuery(query: String) {
+    _movieQuery.update { query }
+    fetchMoviesByQuery(query = query)
+  }
+
+  private fun resetMovieQuery() {
+    if (movieQuery.value != null) _movieQuery.update { null }
+  }
 }

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Vekoz</string>
+    <string name="find_a_movie_that_s_oscar_worthy">Find a movie that’s Oscar-worthy!</string>
+    <string name="expand">expand</string>
 </resources>

@@ -1,5 +1,6 @@
 package seifemadhamdy.vekoz.presentation.ui.viewmodels
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,7 @@ import javax.inject.Inject
 class MovieDetailsViewModel
 @Inject
 constructor(
+    savedStateHandle: SavedStateHandle,
     private val tmdbMoviesRepository: TmdbMoviesRepository,
     private val watchlistRepository: WatchlistRepository
 ) : ViewModel() {
@@ -37,6 +39,8 @@ constructor(
       data class Error(val message: String) : UiState<Nothing>
     }
   }
+
+  private val movieId: Int = savedStateHandle["movieId"]!!
 
   private val _movieDetailsUiState =
       MutableStateFlow<UiState<MovieDetailsResponseDto>>(UiState.Loading)
@@ -52,7 +56,11 @@ constructor(
   val movieCreditsUiState: StateFlow<UiState<MovieCreditsResponseDto>> =
       _movieCreditsUiState.asStateFlow()
 
-  fun fetchMovieDetails(movieId: Int) {
+  init {
+    fetchMovieDetails()
+  }
+
+  fun fetchMovieDetails() {
     viewModelScope.launch {
       _movieDetailsUiState.update { UiState.Loading }
 
@@ -66,7 +74,7 @@ constructor(
     }
   }
 
-  fun fetchSimilarMovies(movieId: Int) {
+  fun fetchSimilarMovies() {
     viewModelScope.launch {
       _similarMoviesUiState.update { UiState.Loading }
 
@@ -80,7 +88,7 @@ constructor(
     }
   }
 
-  fun fetchMovieCredits(movieId: Int) {
+  fun fetchMovieCredits() {
     viewModelScope.launch {
       _movieCreditsUiState.update { UiState.Loading }
 
@@ -94,14 +102,14 @@ constructor(
     }
   }
 
-  fun addMovieToWatchlist(movieId: Int) {
+  fun addMovieToWatchlist() {
     viewModelScope.launch { watchlistRepository.addToWatchlist(movieId = movieId) }
   }
 
-  fun removeMovieFromWatchlist(movieId: Int) {
+  fun removeMovieFromWatchlist() {
     viewModelScope.launch { watchlistRepository.removeFromWatchlist(movieId = movieId) }
   }
 
-  fun isMovieInWatchlist(movieId: Int): Flow<Boolean> =
+  fun isMovieInWatchlist(): Flow<Boolean> =
       flow { emit(watchlistRepository.isInWatchlist(movieId = movieId)) }.flowOn(Dispatchers.IO)
 }
