@@ -32,7 +32,7 @@ fun VekozNavHost(
                 listOf(navArgument(VekozDestination.MOVIE_ID) { type = NavType.IntType })) {
                 navBackStackEntry ->
               navBackStackEntry.arguments?.getInt(VekozDestination.MOVIE_ID)?.let { movieId ->
-                MovieDetailsScreen(navHostController = navHostController, movieId = movieId)
+                MovieDetailsScreen(navHostController = navHostController)
               }
             }
       }
