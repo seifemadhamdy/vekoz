@@ -8,11 +8,12 @@ import seifemadhamdy.vekoz.data.local.entity.WatchlistEntity
 
 @Dao
 interface WatchlistDao {
-  @Insert(onConflict = OnConflictStrategy.REPLACE)
-  suspend fun addToWatchlist(watchlistEntity: WatchlistEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addToWatchlist(watchlistEntity: WatchlistEntity)
 
-  @Query("DELETE FROM watchlist WHERE movieId = :movieId") suspend fun deleteByMovieId(movieId: Int)
+    @Query("DELETE FROM watchlist WHERE movieId = :movieId")
+    suspend fun deleteByMovieId(movieId: Int)
 
-  @Query("SELECT EXISTS(SELECT 1 FROM watchlist WHERE movieId = :movieId)")
-  suspend fun isInWatchlist(movieId: Int): Boolean
+    @Query("SELECT EXISTS(SELECT 1 FROM watchlist WHERE movieId = :movieId)")
+    suspend fun isInWatchlist(movieId: Int): Boolean
 }

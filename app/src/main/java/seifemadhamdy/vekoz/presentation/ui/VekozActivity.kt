@@ -12,10 +12,10 @@ import seifemadhamdy.vekoz.presentation.ui.theme.VekozTheme
 
 @AndroidEntryPoint
 class VekozActivity : ComponentActivity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    installSplashScreen()
-    enableEdgeToEdge()
-    setContent { VekozTheme { VekozNavHost(navHostController = rememberNavController()) } }
-  }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        installSplashScreen()
+        enableEdgeToEdge()
+        setContent { VekozTheme { VekozNavHost(navHostController = rememberNavController()) } }
+    }
 }

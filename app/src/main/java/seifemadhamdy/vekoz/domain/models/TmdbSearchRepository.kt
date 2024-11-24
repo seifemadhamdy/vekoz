@@ -5,5 +5,5 @@ import seifemadhamdy.vekoz.data.remote.dto.MoviesByQueryResponseDto
 import seifemadhamdy.vekoz.data.remote.result.NetworkResult
 
 interface TmdbSearchRepository {
-  suspend fun getMoviesByQuery(query: String): Flow<NetworkResult<MoviesByQueryResponseDto>>
+    suspend fun getMoviesByQuery(query: String): Flow<NetworkResult<MoviesByQueryResponseDto>>
 }

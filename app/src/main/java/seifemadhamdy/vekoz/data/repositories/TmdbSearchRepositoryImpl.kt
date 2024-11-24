@@ -12,9 +12,9 @@ class TmdbSearchRepositoryImpl
 @Inject
 constructor(private val tmdbSearchService: TmdbSearchService) : TmdbSearchRepository {
 
-  override suspend fun getMoviesByQuery(
-      query: String
-  ): Flow<NetworkResult<MoviesByQueryResponseDto>> = safeApiCall {
-    tmdbSearchService.getMoviesByQuery(query)
-  }
+    override suspend fun getMoviesByQuery(
+        query: String
+    ): Flow<NetworkResult<MoviesByQueryResponseDto>> = safeApiCall {
+        tmdbSearchService.getMoviesByQuery(query)
+    }
 }

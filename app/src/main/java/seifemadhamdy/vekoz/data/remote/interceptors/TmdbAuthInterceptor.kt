@@ -6,17 +6,17 @@ import seifemadhamdy.vekoz.BuildConfig
 import javax.inject.Inject
 
 class TmdbAuthInterceptor @Inject constructor() : Interceptor {
-  override fun intercept(chain: Interceptor.Chain): Response {
-    val originalRequest = chain.request()
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val originalRequest = chain.request()
 
-    val requestWithHeaders =
-        originalRequest
-            .newBuilder()
-            .addHeader("Accept", "application/json")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("Authorization", "Bearer ${BuildConfig.TMDB_ACCESS_TOKEN}")
-            .build()
+        val requestWithHeaders =
+            originalRequest
+                .newBuilder()
+                .addHeader("Accept", "application/json")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer ${BuildConfig.TMDB_ACCESS_TOKEN}")
+                .build()
 
-    return chain.proceed(requestWithHeaders)
-  }
+        return chain.proceed(requestWithHeaders)
+    }
 }

@@ -16,27 +16,30 @@ import seifemadhamdy.vekoz.data.remote.dto.MovieCastDto
 import seifemadhamdy.vekoz.data.remote.dto.MovieCreditsCrewDto
 
 sealed class Person {
-  data class Actor(val actor: MovieCastDto) : Person()
+    data class Actor(val actor: MovieCastDto) : Person()
 
-  data class Director(val director: MovieCreditsCrewDto) : Person()
+    data class Director(val director: MovieCreditsCrewDto) : Person()
 }
 
 @Composable
 fun PersonCard(person: Person) {
-  Card(
-      modifier =
-          Modifier.width((LocalConfiguration.current.screenWidthDp.dp / 3) - 26.dp).aspectRatio(1f),
-      shape = CircleShape) {
+    Card(
+        modifier =
+            Modifier.width((LocalConfiguration.current.screenWidthDp.dp / 3) - 26.dp)
+                .aspectRatio(1f),
+        shape = CircleShape,
+    ) {
         val profilePath =
             when (person) {
-              is Person.Actor -> person.actor.profilePath
-              is Person.Director -> person.director.profilePath
+                is Person.Actor -> person.actor.profilePath
+                is Person.Director -> person.director.profilePath
             }
 
         AsyncImage(
             model = "${TmdbUrls.BASE_IMAGE_URL}/original${profilePath}",
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop)
-      }
+            contentScale = ContentScale.Crop,
+        )
+    }
 }

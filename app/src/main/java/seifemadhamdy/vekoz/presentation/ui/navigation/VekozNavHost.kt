@@ -16,24 +16,24 @@ import seifemadhamdy.vekoz.presentation.screens.MovieDetailsScreen
 @Composable
 fun VekozNavHost(
     navHostController: NavHostController,
-    startDestination: String = VekozDestination.Home.route
+    startDestination: String = VekozDestination.Home.route,
 ) {
-  NavHost(
-      navController = navHostController,
-      startDestination = startDestination,
-      modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    NavHost(
+        navController = navHostController,
+        startDestination = startDestination,
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
         composable(route = VekozDestination.Home.route) {
-          HomeScreen(navHostController = navHostController)
+            HomeScreen(navHostController = navHostController)
         }
 
         composable(
             route = VekozDestination.MovieDetails.route,
-            arguments =
-                listOf(navArgument(VekozDestination.MOVIE_ID) { type = NavType.IntType })) {
-                navBackStackEntry ->
-              navBackStackEntry.arguments?.getInt(VekozDestination.MOVIE_ID)?.let { movieId ->
+            arguments = listOf(navArgument(VekozDestination.MOVIE_ID) { type = NavType.IntType }),
+        ) { navBackStackEntry ->
+            navBackStackEntry.arguments?.getInt(VekozDestination.MOVIE_ID)?.let { movieId ->
                 MovieDetailsScreen(navHostController = navHostController)
-              }
             }
-      }
+        }
+    }
 }

@@ -6,6 +6,6 @@ import retrofit2.http.Query
 import seifemadhamdy.vekoz.data.remote.dto.MoviesByQueryResponseDto
 
 interface TmdbSearchService {
-  @GET("search/movie")
-  suspend fun getMoviesByQuery(@Query("query") query: String): Response<MoviesByQueryResponseDto>
+    @GET("search/movie")
+    suspend fun getMoviesByQuery(@Query("query") query: String): Response<MoviesByQueryResponseDto>
 }

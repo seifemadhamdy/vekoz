@@ -7,5 +7,5 @@ import seifemadhamdy.vekoz.data.local.entity.WatchlistEntity
 
 @Database(entities = [WatchlistEntity::class], version = 1)
 abstract class WatchlistDatabase : RoomDatabase() {
-  abstract fun watchlistDao(): WatchlistDao
+    abstract fun watchlistDao(): WatchlistDao
 }
