@@ -58,13 +58,13 @@ constructor(
             _popularMoviesUiState.update { UiState.Loading }
 
             tmdbMoviesRepository.getPopularMovies().collect { networkResult ->
-                _popularMoviesUiState.value =
+                _popularMoviesUiState.update {
                     when (networkResult) {
-                        is NetworkResult.Error ->
-                            UiState.Error(networkResult.message ?: "Unknown Error")
+                        is NetworkResult.Error -> UiState.Error(networkResult.message)
                         is NetworkResult.Success ->
                             UiState.Success(data = networkResult.data.results)
                     }
+                }
             }
         }
     }
@@ -74,13 +74,13 @@ constructor(
             _queriedMoviesUiState.update { UiState.Loading }
 
             tmdbSearchRepository.getMoviesByQuery(query = query).collect { networkResult ->
-                _queriedMoviesUiState.value =
+                _queriedMoviesUiState.update {
                     when (networkResult) {
-                        is NetworkResult.Error ->
-                            UiState.Error(networkResult.message ?: "Unknown Error")
+                        is NetworkResult.Error -> UiState.Error(networkResult.message)
                         is NetworkResult.Success ->
                             UiState.Success(data = networkResult.data.results)
                     }
+                }
             }
         }
     }

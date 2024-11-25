@@ -11,6 +11,19 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("../vekoz-release-keystore.jks")
+            keyAlias = "vekoz_release"
+
+            "MayThe@4thBe!W1thU"
+                .let {
+                    storePassword = it
+                    keyPassword = it
+                }
+        }
+    }
+
     namespace = "seifemadhamdy.vekoz"
     compileSdk = 35
 
@@ -39,11 +52,14 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

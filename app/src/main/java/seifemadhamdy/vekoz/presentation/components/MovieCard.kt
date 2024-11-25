@@ -15,10 +15,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -76,17 +76,18 @@ fun MovieCard(
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                val hazeTint = HazeTint(color = colorScheme.surface.copy(alpha = 0.6f))
-
                 val hazeStyle =
-                    HazeStyle(
-                        backgroundColor = Color.Black,
-                        tint = hazeTint,
-                        blurRadius = 20.dp,
-                        noiseFactor = 0.0625f,
-                        fallbackTint = hazeTint,
-                    )
+                    HazeTint(color = colorScheme.surfaceContainer.copy(alpha = 0.87f)).run {
+                        HazeStyle(
+                            backgroundColor = Color.Black,
+                            tint = this,
+                            blurRadius = 20.dp,
+                            noiseFactor = 0f,
+                            fallbackTint = this,
+                        )
+                    }
 
                 StringFormatter.formatVoteAverage(voteAverage = movieItemData.voteAverage)?.let {
                     voteAverage ->
@@ -95,50 +96,71 @@ fun MovieCard(
                             Modifier.padding(all = 16.dp)
                                 .clip(shape = MaterialTheme.shapes.extraLarge)
                                 .hazeChild(state = hazeState, style = hazeStyle)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                .padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_star_fill),
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
-                            tint = colorScheme.onSurface,
+                            tint = contentColorFor(hazeStyle.backgroundColor),
                         )
 
                         Text(
                             text = voteAverage,
                             modifier = Modifier.alpha(alpha = 0.6f),
-                            color = colorScheme.onSurface,
+                            color = contentColorFor(hazeStyle.backgroundColor),
                             style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(weight = 1f))
+                Spacer(modifier = Modifier.fillMaxWidth().weight(weight = 1f))
 
                 Column(
                     modifier =
                         Modifier.fillMaxWidth()
-                            .padding(all = 16.dp)
-                            .clip(shape = MaterialTheme.shapes.extraLarge)
                             .hazeChild(state = hazeState, style = hazeStyle)
-                            .padding(start = 16.dp, top = 8.dp, end = 0.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                            .padding(start = 24.dp, top = 24.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(end = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        movieItemData.id?.let { id ->
+                            LaunchedEffect(id) { viewModel.initializeWatchlistState(id) }
+                            val isInWatchlist by viewModel.isMovieInWatchlist(id).collectAsState()
+
+                            FilledIconToggleButton(
+                                checked = isInWatchlist,
+                                onCheckedChange = {
+                                    if (isInWatchlist)
+                                        viewModel.removeMovieFromWatchlist(movieId = id)
+                                    else viewModel.addMovieToWatchlist(movieId = id)
+                                },
+                            ) {
+                                Icon(
+                                    painter =
+                                        painterResource(
+                                            if (!isInWatchlist) R.drawable.ic_eye_slash_bold
+                                            else R.drawable.ic_eye_fill
+                                        ),
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+
                         Column(modifier = Modifier.weight(1f)) {
                             movieItemData.title?.let { title ->
                                 Text(
                                     text = title,
-                                    color = colorScheme.onSurface,
+                                    color = contentColorFor(hazeStyle.backgroundColor),
                                     modifier = Modifier.fillMaxWidth().basicMarquee(),
                                     maxLines = 1,
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleLarge,
                                 )
                             }
 
@@ -152,54 +174,27 @@ fun MovieCard(
                                             Modifier.fillMaxWidth()
                                                 .alpha(alpha = 0.6f)
                                                 .basicMarquee(),
-                                        color = colorScheme.onSurface,
+                                        color = contentColorFor(hazeStyle.backgroundColor),
                                         maxLines = 1,
                                         style = MaterialTheme.typography.labelLarge,
                                     )
                                 }
                         }
-
-                        movieItemData.id?.let { id ->
-                            LaunchedEffect(id) { viewModel.initializeWatchlistState(id) }
-                            val isInWatchlist by viewModel.isMovieInWatchlist(id).collectAsState()
-
-                            FilledIconToggleButton(
-                                checked = isInWatchlist,
-                                onCheckedChange = {
-                                    if (isInWatchlist)
-                                        viewModel.removeMovieFromWatchlist(movieId = id)
-                                    else viewModel.addMovieToWatchlist(movieId = id)
-                                },
-                                colors =
-                                    IconButtonDefaults.filledIconToggleButtonColors(
-                                        containerColor = colorScheme.surfaceVariant,
-                                        contentColor = colorScheme.onSurfaceVariant,
-                                        checkedContainerColor = colorScheme.primaryContainer,
-                                        checkedContentColor = colorScheme.onPrimaryContainer,
-                                    ),
-                            ) {
-                                Icon(
-                                    painter =
-                                        painterResource(
-                                            if (!isInWatchlist) R.drawable.ic_eye_slash_bold
-                                            else R.drawable.ic_eye_fill
-                                        ),
-                                    contentDescription = null,
-                                )
-                            }
-                        }
                     }
 
                     movieItemData.overview?.let { overview ->
-                        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth().alpha(alpha = 0.1f),
+                            color = contentColorFor(hazeStyle.backgroundColor),
+                        )
 
                         ExpandableText(
                             text = overview,
                             modifier =
-                                Modifier.padding(end = 16.dp).fillMaxWidth().alpha(alpha = 0.87f),
-                            color = colorScheme.onSurface,
+                                Modifier.padding(end = 24.dp).fillMaxWidth().alpha(alpha = 0.87f),
+                            color = contentColorFor(hazeStyle.backgroundColor),
                             maxLinesBeforeExpansion = 1,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                         )
                     }
                 }

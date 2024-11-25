@@ -21,7 +21,7 @@ fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Flow<NetworkResult<T>> 
             emit(
                 NetworkResult.Error(
                     code = response.code(),
-                    message = response.message(),
+                    message = response.message() ?: "Unknown error",
                     errorBody = response.errorBody()?.string(),
                 )
             )
@@ -31,34 +31,24 @@ fun <T> safeApiCall(apiCall: suspend () -> Response<T>): Flow<NetworkResult<T>> 
             when (e) {
                 is SocketTimeoutException -> ApiException.Timeout("Request timed out")
                 is UnknownHostException -> ApiException.Network("No internet connection")
-                is IOException -> ApiException.Network("Network error occurred")
-
-                is HttpException -> {
-                    if (e.code() == 400) {
-                        ApiException.BadRequest(
-                            errorBody = e.response()?.errorBody()?.string(),
-                            message = "Bad request error",
-                        )
-                    } else {
-                        ApiException.ServerError(code = e.code(), message = e.message())
+                is IOException -> ApiException.Network("Network error")
+                is HttpException ->
+                    when (e.code()) {
+                        400 ->
+                            ApiException.BadRequest(
+                                errorBody = e.response()?.errorBody()?.string(),
+                                message = "Invalid request",
+                            )
+                        else -> ApiException.ServerError(code = e.code(), message = e.message())
                     }
-                }
-                else -> ApiException.Unknown("An unexpected error occurred")
+                else -> ApiException.Unknown("Unexpected error")
             }
 
         emit(
             NetworkResult.Error(
-                code =
-                    when (networkError) {
-                        is ApiException.ServerError -> networkError.code
-                        else -> null
-                    },
-                message = networkError.message,
-                errorBody =
-                    when (networkError) {
-                        is ApiException.BadRequest -> networkError.errorBody
-                        else -> null
-                    },
+                code = (networkError as? ApiException.ServerError)?.code,
+                message = networkError.message!!,
+                errorBody = (networkError as? ApiException.BadRequest)?.errorBody,
             )
         )
     }

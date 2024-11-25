@@ -1,5 +1,11 @@
 <resources>
     <string name="app_name">Vekoz</string>
     <string name="find_a_movie_that_s_oscar_worthy">Find a movie that’s Oscar-worthy!</string>
-    <string name="expand">expand</string>
+    <string name="expand">Expand</string>
+    <string name="plot_twist">Plot Twist</string>
+    <string name="undefined">Undefined</string>
+    <string name="reload">Reload</string>
+    <string name="associated_actors">Associated Actors</string>
+    <string name="associated_directors">Associated Directors</string>
+    <string name="similar_to_this">Similar to This</string>
 </resources>

@@ -14,14 +14,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -33,23 +29,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -59,22 +51,16 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import seifemadhamdy.vekoz.R
 import seifemadhamdy.vekoz.data.remote.dto.ResultsDto
+import seifemadhamdy.vekoz.presentation.components.IllustrationBox
 import seifemadhamdy.vekoz.presentation.components.MovieCard
 import seifemadhamdy.vekoz.presentation.ui.viewmodels.HomeViewModel
 import seifemadhamdy.vekoz.presentation.ui.viewmodels.HomeViewModel.Companion.UiState
-import kotlin.math.ln
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -82,58 +68,32 @@ fun HomeScreen(navHostController: NavHostController) {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val popularMoviesUiState by homeViewModel.popularMovesUiState.collectAsState()
 
-    Crossfade(targetState = popularMoviesUiState, label = "homeCrossfade") { uiState ->
+    Crossfade(targetState = popularMoviesUiState, label = "popularMoviesUiState") { uiState ->
         when (uiState) {
             is UiState.Error -> {
+                val backgroundColor = colorScheme.errorContainer
+
                 Box(
                     modifier =
                         Modifier.fillMaxSize()
                             .background(
                                 brush =
                                     Brush.verticalGradient(
-                                        colors =
-                                            listOf(
-                                                MaterialTheme.colorScheme.errorContainer,
-                                                Color.Transparent,
-                                            )
+                                        colors = listOf(backgroundColor, Color.Transparent)
                                     )
                             )
                             .safeDrawingPadding()
                             .padding(all = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                    IllustrationBox(
+                        imageResId = R.drawable.ic_warning_fill,
+                        title = stringResource(R.string.plot_twist),
+                        body = uiState.message,
+                        contentColor = contentColorFor(backgroundColor),
                     ) {
-                        AsyncImage(
-                            model = R.drawable.ill_error,
-                            modifier = Modifier.fillMaxWidth(fraction = 0.618034f),
-                            contentDescription = null,
-                            colorFilter =
-                                ColorFilter.tint(MaterialTheme.colorScheme.onErrorContainer),
-                        )
-
-                        Column {
-                            Text(
-                                text = "Plot Twist!",
-                                modifier = Modifier.fillMaxWidth().alpha(alpha = 0.87f),
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.headlineSmall,
-                            )
-
-                            Text(
-                                text = uiState.message,
-                                modifier = Modifier.fillMaxWidth().alpha(alpha = 0.6f),
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                        }
-
                         Button(onClick = { homeViewModel.fetchPopularMovies() }) {
-                            Text("Try again")
+                            Text(stringResource(R.string.reload))
                         }
                     }
                 }
@@ -144,38 +104,12 @@ fun HomeScreen(navHostController: NavHostController) {
                     modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.width(64.dp),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        trackColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    )
+                    CircularProgressIndicator(modifier = Modifier.width(48.dp))
                 }
             }
 
             is UiState.Success -> {
-                val hazeState = remember { HazeState() }
-                val colorScheme = MaterialTheme.colorScheme
-                val goldenRatioComplementary = 0.381966012f
                 val movieQuery by homeViewModel.movieQuery.collectAsState()
-
-                val hazeTint =
-                    HazeTint(
-                        color =
-                            colorScheme.primaryContainer.copy(
-                                alpha = ((4.5f * ln(3.dp.value + 1)) + 2f) / 100f
-                            )
-                    )
-
-                val hazeStyle =
-                    HazeStyle(
-                        backgroundColor = colorScheme.background,
-                        tint = hazeTint,
-                        blurRadius = 20.dp,
-                        noiseFactor = 0.0625f,
-                        fallbackTint = hazeTint,
-                    )
-
-                val snackbarHostState = remember { SnackbarHostState() }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -183,10 +117,15 @@ fun HomeScreen(navHostController: NavHostController) {
                         Column(
                             modifier =
                                 Modifier.fillMaxWidth()
-                                    .hazeChild(state = hazeState, style = hazeStyle)
+                                    .background(
+                                        brush =
+                                            Brush.verticalGradient(
+                                                listOf(colorScheme.background, Color.Transparent)
+                                            )
+                                    )
                                     .padding(all = 16.dp)
                                     .animateContentSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
                             val isSearchBarVisible by
                                 homeViewModel.isSearchBarVisible.collectAsState()
@@ -201,8 +140,7 @@ fun HomeScreen(navHostController: NavHostController) {
                                 AsyncImage(
                                     model = R.drawable.logo_vekoz_typemark,
                                     contentDescription = null,
-                                    modifier =
-                                        Modifier.fillMaxWidth(fraction = goldenRatioComplementary),
+                                    modifier = Modifier.fillMaxWidth(fraction = 0.381966012f),
                                     alignment = Alignment.CenterStart,
                                     colorFilter = ColorFilter.tint(colorScheme.primary),
                                 )
@@ -210,11 +148,6 @@ fun HomeScreen(navHostController: NavHostController) {
                                 IconToggleButton(
                                     checked = isSearchBarVisible,
                                     onCheckedChange = { homeViewModel.toggleSearchBarVisibility() },
-                                    colors =
-                                        IconButtonDefaults.iconToggleButtonColors(
-                                            contentColor = colorScheme.onPrimaryContainer,
-                                            checkedContentColor = colorScheme.onPrimaryContainer,
-                                        ),
                                 ) {
                                     Icon(
                                         painter =
@@ -224,6 +157,7 @@ fun HomeScreen(navHostController: NavHostController) {
                                                 else R.drawable.ic_x_bold
                                             ),
                                         contentDescription = null,
+                                        tint = colorScheme.onSurface,
                                     )
                                 }
                             }
@@ -233,8 +167,6 @@ fun HomeScreen(navHostController: NavHostController) {
                                 enter = fadeIn() + scaleIn(),
                                 exit = fadeOut() + scaleOut(),
                             ) {
-                                val containerAlpha = 0.6f
-
                                 OutlinedTextField(
                                     value = movieQuery ?: "",
                                     onValueChange = { value ->
@@ -251,25 +183,21 @@ fun HomeScreen(navHostController: NavHostController) {
                                         )
                                     },
                                     singleLine = true,
-                                    shape = MaterialTheme.shapes.large,
+                                    shape = SearchBarDefaults.inputFieldShape,
                                     colors =
                                         OutlinedTextFieldDefaults.colors(
                                             focusedContainerColor =
                                                 SearchBarDefaults.inputFieldColors()
-                                                    .focusedContainerColor
-                                                    .copy(alpha = containerAlpha),
+                                                    .focusedContainerColor,
                                             unfocusedContainerColor =
                                                 SearchBarDefaults.inputFieldColors()
-                                                    .unfocusedContainerColor
-                                                    .copy(alpha = containerAlpha),
+                                                    .unfocusedContainerColor,
                                             disabledContainerColor =
                                                 SearchBarDefaults.inputFieldColors()
-                                                    .disabledContainerColor
-                                                    .copy(alpha = containerAlpha),
+                                                    .disabledContainerColor,
                                             errorContainerColor =
                                                 SearchBarDefaults.inputFieldColors()
-                                                    .errorContainerColor
-                                                    .copy(alpha = containerAlpha),
+                                                    .errorContainerColor,
                                             focusedBorderColor = Color.Transparent,
                                             unfocusedBorderColor = Color.Transparent,
                                             disabledBorderColor = Color.Transparent,
@@ -278,51 +206,9 @@ fun HomeScreen(navHostController: NavHostController) {
                             }
                         }
                     },
-                    bottomBar = {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .height(
-                                        height =
-                                            WindowInsets.navigationBars
-                                                .asPaddingValues()
-                                                .calculateBottomPadding()
-                                    )
-                                    .hazeChild(state = hazeState, style = hazeStyle)
-                        )
-                    },
-                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                 ) { paddingValues ->
                     val layoutDirection = LocalLayoutDirection.current
-                    val lazyColumnPadding = 16.dp
                     val queriedMoviesUiState by homeViewModel.queriedMoviesUiState.collectAsState()
-
-                    Crossfade(targetState = queriedMoviesUiState, label = "searchCrossfade") { state
-                        ->
-                        when (state) {
-                            is UiState.Error -> {
-                                LaunchedEffect(snackbarHostState) {
-                                    snackbarHostState.showSnackbar(
-                                        state.message,
-                                        withDismissAction = true,
-                                    )
-                                }
-                            }
-                            UiState.Loading -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.width(64.dp),
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                        trackColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                    )
-                                }
-                            }
-                            is UiState.Success -> {}
-                        }
-                    }
 
                     val movieData =
                         when {
@@ -334,58 +220,87 @@ fun HomeScreen(navHostController: NavHostController) {
                             else -> null
                         }.orEmpty()
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize().haze(state = hazeState),
-                        state = rememberLazyListState(),
-                        contentPadding =
-                            PaddingValues(
-                                start =
-                                    paddingValues.calculateStartPadding(layoutDirection) +
-                                        lazyColumnPadding,
-                                top = paddingValues.calculateTopPadding() + lazyColumnPadding,
-                                end =
-                                    paddingValues.calculateEndPadding(layoutDirection) +
-                                        lazyColumnPadding,
-                                bottom = paddingValues.calculateBottomPadding() + lazyColumnPadding,
-                            ),
-                        verticalArrangement = Arrangement.spacedBy(lazyColumnPadding),
-                    ) {
-                        val groupedMoviesByReleaseYear =
-                            movieData
-                                .groupBy { it.releaseDate?.substringBefore("-") }
-                                .entries
-                                .sortedByDescending { it.key }
+                    Crossfade(targetState = movieData, label = "movieDataCrossfade") { data ->
+                        if (data.isNotEmpty()) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                state = rememberLazyListState(),
+                                contentPadding =
+                                    PaddingValues(
+                                        start =
+                                            paddingValues.calculateStartPadding(layoutDirection) +
+                                                16.dp,
+                                        top = paddingValues.calculateTopPadding() + 16.dp,
+                                        end =
+                                            paddingValues.calculateEndPadding(layoutDirection) +
+                                                16.dp,
+                                        bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                                    ),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                val groupedMoviesByReleaseYear =
+                                    data
+                                        .groupBy { it.releaseDate?.substringBefore("-") }
+                                        .entries
+                                        .sortedByDescending { it.key }
 
-                        groupedMoviesByReleaseYear.forEach { (releaseYear, movies) ->
-                            item(key = "header_$releaseYear") {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.extraLarge,
-                                    color = colorScheme.surfaceContainer,
-                                ) {
-                                    Text(
-                                        text =
-                                            "${(if (releaseYear?.isNotBlank() == true) releaseYear
-                                            else "Unknown Year")} Releases",
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .padding(all = 16.dp)
-                                                .alpha(alpha = 0.6f),
-                                        textAlign = TextAlign.Center,
-                                        style = MaterialTheme.typography.titleLarge,
-                                    )
+                                groupedMoviesByReleaseYear.forEach { (releaseYear, movies) ->
+                                    item(key = "header_$releaseYear") {
+                                        Text(
+                                            text =
+                                                (if (releaseYear?.isNotBlank() == true) releaseYear
+                                                else stringResource(R.string.undefined)),
+                                            modifier = Modifier.alpha(alpha = 0.6f),
+                                            style = MaterialTheme.typography.headlineMedium,
+                                        )
+                                    }
+
+                                    items(
+                                        items = movies,
+                                        key = { it.id ?: "item_at_${data.indexOf(it)}" },
+                                    ) { movie ->
+                                        MovieCard(
+                                            movieItemData = movie,
+                                            navHostController = navHostController,
+                                            viewModel = homeViewModel,
+                                        )
+                                    }
                                 }
                             }
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Crossfade(
+                                    targetState = queriedMoviesUiState,
+                                    label = "queriedMoviesUiStateCrossfade",
+                                ) { uiState ->
+                                    when (uiState) {
+                                        is UiState.Error -> {
+                                            IllustrationBox(
+                                                modifier =
+                                                    Modifier.fillMaxSize().padding(all = 16.dp),
+                                                imageResId = R.drawable.ic_warning_fill,
+                                                title = stringResource(R.string.plot_twist),
+                                                body = uiState.message,
+                                            )
+                                        }
+                                        UiState.Loading -> {
+                                            Box(
+                                                modifier =
+                                                    Modifier.fillMaxSize().padding(all = 16.dp),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.width(48.dp)
+                                                )
+                                            }
+                                        }
 
-                            items(
-                                items = movies,
-                                key = { it.id ?: "item_at_${movieData.indexOf(it)}" },
-                            ) { movie ->
-                                MovieCard(
-                                    movieItemData = movie,
-                                    navHostController = navHostController,
-                                    viewModel = homeViewModel,
-                                )
+                                        is UiState.Success -> Unit
+                                    }
+                                }
                             }
                         }
                     }

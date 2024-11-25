@@ -1,5 +1,6 @@
 package seifemadhamdy.vekoz.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -15,9 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -29,15 +28,12 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,24 +46,30 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import dev.chrisbanes.haze.HazeProgressive
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 import seifemadhamdy.vekoz.R
 import seifemadhamdy.vekoz.core.constants.TmdbUrls
 import seifemadhamdy.vekoz.core.utils.StringFormatter
-import seifemadhamdy.vekoz.data.remote.dto.MovieCastDto
-import seifemadhamdy.vekoz.data.remote.dto.MovieCreditsCrewDto
-import seifemadhamdy.vekoz.data.remote.dto.ResultsDto
+import seifemadhamdy.vekoz.presentation.components.AttributeSurface
 import seifemadhamdy.vekoz.presentation.components.ExpandableText
+import seifemadhamdy.vekoz.presentation.components.IllustrationBox
 import seifemadhamdy.vekoz.presentation.components.Person
 import seifemadhamdy.vekoz.presentation.components.PersonCard
 import seifemadhamdy.vekoz.presentation.components.SimilarMovieCard
@@ -80,164 +82,74 @@ fun MovieDetailsScreen(navHostController: NavHostController) {
     val movieDetailsViewModel: MovieDetailsViewModel = hiltViewModel()
     val movieDetailsUiState by movieDetailsViewModel.movieDetailsUiState.collectAsState()
 
-    Crossfade(targetState = movieDetailsUiState, label = "movieDetailsCrossfade") { uiState ->
+    Crossfade(targetState = movieDetailsUiState, label = "movieDetailsUiStateCrossfade") { uiState
+        ->
         when (uiState) {
             is UiState.Error -> {
+                val backgroundColor = colorScheme.errorContainer
+
                 Box(
                     modifier =
                         Modifier.fillMaxSize()
                             .background(
                                 brush =
                                     Brush.verticalGradient(
-                                        colors =
-                                            listOf(colorScheme.errorContainer, Color.Transparent)
+                                        colors = listOf(backgroundColor, Color.Transparent)
                                     )
                             )
                             .safeDrawingPadding()
                             .padding(all = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                    IllustrationBox(
+                        imageResId = R.drawable.ic_warning_fill,
+                        title = stringResource(R.string.plot_twist),
+                        body = uiState.message,
+                        contentColor = contentColorFor(backgroundColor),
                     ) {
-                        AsyncImage(
-                            model = R.drawable.ill_error,
-                            modifier = Modifier.fillMaxWidth(fraction = 0.618034f),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(colorScheme.onErrorContainer),
-                        )
-
-                        Column {
-                            Text(
-                                text = "Plot Twist!",
-                                modifier = Modifier.fillMaxWidth().alpha(alpha = 0.87f),
-                                color = colorScheme.onErrorContainer,
-                                textAlign = TextAlign.Center,
-                                style = typography.headlineSmall,
-                            )
-
-                            Text(
-                                text = uiState.message,
-                                modifier = Modifier.fillMaxWidth().alpha(alpha = 0.6f),
-                                color = colorScheme.onErrorContainer,
-                                textAlign = TextAlign.Center,
-                                style = typography.titleLarge,
-                            )
-                        }
-
                         Button(onClick = { movieDetailsViewModel.fetchMovieDetails() }) {
-                            Text("Try again")
+                            Text(stringResource(R.string.reload))
                         }
                     }
                 }
             }
+
             UiState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.width(64.dp),
-                        color = colorScheme.tertiary,
-                        trackColor = colorScheme.tertiaryContainer,
-                    )
+                    CircularProgressIndicator(modifier = Modifier.width(48.dp))
                 }
             }
             is UiState.Success -> {
                 val movieDetailsData = uiState.data
-                val snackbarHostState = remember { SnackbarHostState() }
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        Row(
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .windowInsetsPadding(TopAppBarDefaults.windowInsets)
-                                    .padding(all = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                Text(
-                                    text = movieDetailsData.title ?: "Unknown Title",
-                                    modifier = Modifier.fillMaxWidth().basicMarquee(),
-                                    color = colorScheme.onSurface,
-                                    maxLines = 1,
-                                    style = typography.titleLarge,
-                                )
+                Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
+                    val layoutDirection = LocalLayoutDirection.current
 
-                                StringFormatter.formatReleaseDate(
-                                        releaseDate = movieDetailsData.releaseDate
-                                    )
-                                    ?.let { releaseDate ->
-                                        Text(
-                                            text = releaseDate,
-                                            modifier =
-                                                Modifier.fillMaxWidth()
-                                                    .alpha(alpha = 0.6f)
-                                                    .basicMarquee(),
-                                            color = colorScheme.onSurface,
-                                            maxLines = 1,
-                                            style = typography.labelLarge,
-                                        )
-                                    }
-                            }
-
-                            movieDetailsData.id?.let { id ->
-                                val isInWatchlist by
-                                    movieDetailsViewModel.isMovieInWatchlist.collectAsState()
-
-                                FilledIconToggleButton(
-                                    checked = isInWatchlist,
-                                    onCheckedChange = {
-                                        if (isInWatchlist)
-                                            movieDetailsViewModel.removeMovieFromWatchlist()
-                                        else movieDetailsViewModel.addMovieToWatchlist()
-                                    },
-                                    colors =
-                                        IconButtonDefaults.filledIconToggleButtonColors(
-                                            containerColor = colorScheme.surfaceVariant,
-                                            contentColor = colorScheme.onSurfaceVariant,
-                                            checkedContainerColor = colorScheme.primaryContainer,
-                                            checkedContentColor = colorScheme.onPrimaryContainer,
-                                        ),
-                                ) {
-                                    Icon(
-                                        painter =
-                                            painterResource(
-                                                if (!isInWatchlist) R.drawable.ic_eye_slash_bold
-                                                else R.drawable.ic_eye_fill
-                                            ),
-                                        contentDescription = null,
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-                ) { paddingValues ->
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         state = rememberLazyListState(),
                         contentPadding =
-                            PaddingValues(bottom = paddingValues.calculateBottomPadding() + 16.dp),
+                            PaddingValues(
+                                start = paddingValues.calculateStartPadding(layoutDirection),
+                                end = paddingValues.calculateEndPadding(layoutDirection),
+                                bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                            ),
                     ) {
                         item {
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                AsyncImage(
-                                    model =
-                                        "${TmdbUrls.BASE_IMAGE_URL}/original${movieDetailsData.backdropPath}",
-                                    contentDescription = null,
+                                Box(
                                     modifier =
                                         Modifier.fillMaxWidth()
-                                            .aspectRatio(ratio = 1.7777778f)
+                                            .aspectRatio(1.7777778f)
                                             .graphicsLayer(
                                                 compositingStrategy = CompositingStrategy.Offscreen
                                             )
                                             .drawWithContent {
                                                 drawContent()
+
                                                 drawRect(
                                                     brush =
                                                         Brush.verticalGradient(
@@ -245,36 +157,90 @@ fun MovieDetailsScreen(navHostController: NavHostController) {
                                                         ),
                                                     blendMode = BlendMode.DstIn,
                                                 )
-                                            },
-                                    contentScale = ContentScale.Crop,
-                                )
+                                            }
+                                ) {
+                                    val hazeState = remember { HazeState() }
 
-                                val layoutDirection = LocalLayoutDirection.current
+                                    AsyncImage(
+                                        model =
+                                            "${TmdbUrls.BASE_IMAGE_URL}/original${movieDetailsData.backdropPath}",
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize().haze(hazeState),
+                                        contentScale = ContentScale.Crop,
+                                    )
+
+                                    val hazeStyle =
+                                        HazeTint(
+                                                color =
+                                                    colorScheme.surfaceContainer.copy(alpha = 0.87f)
+                                            )
+                                            .run {
+                                                HazeStyle(
+                                                    backgroundColor = Color.Black,
+                                                    tint = this,
+                                                    blurRadius = 20.dp,
+                                                    noiseFactor = 0f,
+                                                    fallbackTint = this,
+                                                )
+                                            }
+
+                                    Box(
+                                        modifier =
+                                            Modifier.fillMaxSize().hazeChild(
+                                                state = hazeState,
+                                                style = hazeStyle,
+                                            ) {
+                                                progressive =
+                                                    HazeProgressive.verticalGradient(
+                                                        startIntensity = 1f,
+                                                        endIntensity = 0f,
+                                                    )
+                                            }
+                                    )
+                                }
 
                                 Column(
                                     modifier =
                                         Modifier.fillMaxWidth()
                                             .padding(
-                                                start =
-                                                    paddingValues.calculateStartPadding(
-                                                        layoutDirection = layoutDirection
-                                                    ),
-                                                top = paddingValues.calculateTopPadding() + 16.dp,
-                                                end =
-                                                    paddingValues.calculateEndPadding(
-                                                        layoutDirection = layoutDirection
-                                                    ) + 16.dp,
+                                                top = paddingValues.calculateTopPadding() + 16.dp
                                             ),
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
-                                    val goldenRatioComplementary = 0.381966012f
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        movieDetailsData.title?.let { title ->
+                                            Text(
+                                                text = title,
+                                                modifier =
+                                                    Modifier.fillMaxWidth()
+                                                        .padding(horizontal = 16.dp)
+                                                        .basicMarquee(),
+                                                color = colorScheme.onSurface,
+                                                maxLines = 1,
+                                                textAlign = TextAlign.Center,
+                                                style = typography.titleLarge,
+                                            )
+                                        }
+
+                                        movieDetailsData.tagline?.let { tagline ->
+                                            Text(
+                                                text = tagline,
+                                                modifier =
+                                                    Modifier.fillMaxWidth()
+                                                        .padding(horizontal = 16.dp)
+                                                        .alpha(alpha = 0.6f),
+                                                color = colorScheme.onSurface,
+                                                maxLines = 1,
+                                                textAlign = TextAlign.Center,
+                                                style = typography.bodyLarge,
+                                            )
+                                        }
+                                    }
 
                                     ElevatedCard(
                                         modifier =
-                                            Modifier.fillMaxWidth(
-                                                    fraction = goldenRatioComplementary
-                                                )
+                                            Modifier.fillMaxWidth(fraction = 0.5f)
                                                 .aspectRatio(0.6666667f),
                                         shape = shapes.extraLarge,
                                         elevation =
@@ -286,114 +252,98 @@ fun MovieDetailsScreen(navHostController: NavHostController) {
                                             model =
                                                 "${TmdbUrls.BASE_IMAGE_URL}/original${movieDetailsData.posterPath}",
                                             contentDescription = null,
-                                            modifier =
-                                                Modifier.fillMaxWidth()
-                                                    .aspectRatio(ratio = 0.6666667f),
+                                            modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop,
                                         )
                                     }
-                                }
-                            }
-                        }
 
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                movieDetailsData.tagline?.let { tagline ->
-                                    Text(
-                                        text = tagline,
-                                        modifier = Modifier.fillMaxWidth().alpha(alpha = 0.87f),
-                                        color = colorScheme.onSurface,
-                                        textAlign = TextAlign.Center,
-                                        style = typography.bodyMedium,
-                                    )
-                                }
+                                    movieDetailsData.id?.let { id ->
+                                        val isInWatchlist by
+                                            movieDetailsViewModel.isMovieInWatchlist
+                                                .collectAsState()
 
-                                val genres = movieDetailsData.genres
-
-                                if (genres.isNotEmpty())
-                                    Text(
-                                        text =
-                                            genres.map { it.name }.joinToString(separator = " | "),
-                                        modifier = Modifier.fillMaxWidth().alpha(alpha = 0.6f),
-                                        color = colorScheme.onSurface,
-                                        textAlign = TextAlign.Center,
-                                        style = typography.labelLarge,
-                                    )
-                            }
-                        }
-
-                        item {
-                            val attributes =
-                                mutableMapOf<Int, String?>().apply {
-                                    StringFormatter.formatVoteAverage(movieDetailsData.voteAverage)
-                                        ?.let { voteAverage ->
-                                            put(R.drawable.ic_star_fill, voteAverage)
-                                        }
-
-                                    put(R.drawable.ic_strategy_fill, movieDetailsData.status)
-
-                                    put(
-                                        R.drawable.ic_money_fill,
-                                        StringFormatter.formatAsCurrency(
-                                            value = movieDetailsData.revenue
-                                        ),
-                                    )
-                                }
-
-                            Row(
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .padding(start = 16.dp, top = 16.dp, end = 16.dp),
-                                horizontalArrangement = Arrangement.SpaceAround,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                attributes.forEach { (iconResId, value) ->
-                                    value?.let { value ->
-                                        Row(
-                                            modifier =
-                                                Modifier.background(
-                                                        color = colorScheme.surfaceContainer,
-                                                        shape = shapes.extraLarge,
-                                                    )
-                                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
+                                        FilledIconToggleButton(
+                                            checked = isInWatchlist,
+                                            onCheckedChange = {
+                                                if (isInWatchlist)
+                                                    movieDetailsViewModel.removeMovieFromWatchlist()
+                                                else movieDetailsViewModel.addMovieToWatchlist()
+                                            },
                                         ) {
                                             Icon(
-                                                painter = painterResource(id = iconResId),
+                                                painter =
+                                                    painterResource(
+                                                        if (!isInWatchlist)
+                                                            R.drawable.ic_eye_slash_bold
+                                                        else R.drawable.ic_eye_fill
+                                                    ),
                                                 contentDescription = null,
-                                                modifier = Modifier.size(18.dp),
-                                                tint = colorScheme.onSurface,
+                                            )
+                                        }
+                                    }
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        movieDetailsData.status?.let { status ->
+                                            AttributeSurface(
+                                                iconResId = R.drawable.ic_strategy_fill,
+                                                value = status,
+                                            )
+                                        }
+
+                                        StringFormatter.formatAsCurrency(
+                                                value = movieDetailsData.revenue
+                                            )
+                                            ?.let { revenue ->
+                                                AttributeSurface(
+                                                    iconResId = R.drawable.ic_money_fill,
+                                                    value = revenue,
+                                                )
+                                            }
+                                    }
+
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        val releaseDate =
+                                            StringFormatter.formatReleaseDate(
+                                                movieDetailsData.releaseDate
                                             )
 
-                                            Text(
-                                                text = value,
-                                                modifier = Modifier.alpha(alpha = 0.6f),
+                                        val metadata =
+                                            movieDetailsData.genres
+                                                .map { it.name }
+                                                .joinToString(
+                                                    separator = " • ",
+                                                    prefix = "$releaseDate • ",
+                                                )
+
+                                        Text(
+                                            text = metadata,
+                                            modifier = Modifier.fillMaxWidth().alpha(0.6f),
+                                            color = colorScheme.onSurface,
+                                            textAlign = TextAlign.Center,
+                                            style = typography.bodyMedium,
+                                        )
+
+                                        movieDetailsData.overview?.let { overview ->
+                                            ExpandableText(
+                                                text = overview,
+                                                modifier =
+                                                    Modifier.padding(start = 16.dp, end = 16.dp)
+                                                        .fillMaxWidth()
+                                                        .alpha(alpha = 0.87f),
                                                 color = colorScheme.onSurface,
-                                                style = typography.labelLarge,
+                                                textAlign = TextAlign.Center,
+                                                maxLinesBeforeExpansion = 3,
+                                                style = typography.bodyLarge,
                                             )
                                         }
                                     }
                                 }
-                            }
-                        }
-
-                        item {
-                            movieDetailsData.overview?.let { overview ->
-                                ExpandableText(
-                                    text = overview,
-                                    modifier =
-                                        Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)
-                                            .fillMaxWidth()
-                                            .alpha(alpha = 0.87f),
-                                    color = colorScheme.onSurface,
-                                    textAlign = TextAlign.Center,
-                                    maxLinesBeforeExpansion = 3,
-                                    style = typography.bodyMedium,
-                                )
                             }
                         }
 
@@ -403,178 +353,220 @@ fun MovieDetailsScreen(navHostController: NavHostController) {
                             val similarMoviesUiState by
                                 movieDetailsViewModel.similarMoviesUiState.collectAsState()
 
-                            when (similarMoviesUiState) {
-                                is UiState.Error -> {}
-                                UiState.Loading -> {}
-                                is UiState.Success -> {
-                                    Text(
-                                        text = "More Like This",
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .alpha(alpha = 0.87f)
-                                                .padding(start = 16.dp, top = 16.dp, end = 16.dp),
-                                        color = colorScheme.onSurface,
-                                        textAlign = TextAlign.Center,
-                                        style = typography.titleLarge,
-                                    )
+                            Crossfade(
+                                targetState = similarMoviesUiState,
+                                label = "similarMoviesUiStateCrossfade",
+                            ) { uiState ->
+                                when (uiState) {
+                                    is UiState.Error -> {
+                                        Toast.makeText(
+                                                LocalContext.current,
+                                                uiState.message,
+                                                Toast.LENGTH_SHORT,
+                                            )
+                                            .show()
+                                    }
 
-                                    val fiveSimilarMoviesData =
-                                        (similarMoviesUiState as UiState.Success<List<ResultsDto>>)
-                                            .data
-                                            .take(5)
-
-                                    LazyRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        state = rememberLazyListState(),
-                                        contentPadding =
-                                            PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        items(
-                                            items = fiveSimilarMoviesData,
-                                            key = {
-                                                it.id
-                                                    ?: "item_at_${fiveSimilarMoviesData.indexOf(it)}"
-                                            },
-                                        ) { movie ->
-                                            SimilarMovieCard(
-                                                navHostController = navHostController,
-                                                movieItemData = movie,
+                                    UiState.Loading -> {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize().padding(all = 16.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.width(48.dp)
                                             )
                                         }
                                     }
+
+                                    is UiState.Success -> {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Text(
+                                                text = stringResource(R.string.similar_to_this),
+                                                modifier =
+                                                    Modifier.fillMaxWidth()
+                                                        .alpha(alpha = 0.87f)
+                                                        .padding(
+                                                            start = 16.dp,
+                                                            top = 16.dp,
+                                                            end = 16.dp,
+                                                        ),
+                                                color = colorScheme.onSurface,
+                                                textAlign = TextAlign.Center,
+                                                style = typography.titleLarge,
+                                            )
+
+                                            val similarMoviesData = uiState.data
+
+                                            LazyRow(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                state = rememberLazyListState(),
+                                                contentPadding =
+                                                    PaddingValues(
+                                                        start = 16.dp,
+                                                        top = 16.dp,
+                                                        end = 16.dp,
+                                                    ),
+                                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                items(
+                                                    items = similarMoviesData.results.take(5),
+                                                    key = {
+                                                        it.id
+                                                            ?: "item_at_${similarMoviesData.results.indexOf(it)}"
+                                                    },
+                                                ) { movie ->
+                                                    SimilarMovieCard(
+                                                        navHostController = navHostController,
+                                                        movieItemData = movie,
+                                                    )
+                                                }
+                                            }
+
+                                            LaunchedEffect(Unit) {
+                                                movieDetailsViewModel.fetchSimilarMoviesAndCast(
+                                                    similarMoviesData
+                                                )
+                                            }
+
+                                            val movieCreditsUiState by
+                                                movieDetailsViewModel.movieCreditsUiState
+                                                    .collectAsState()
+
+                                            Crossfade(
+                                                targetState = movieCreditsUiState,
+                                                label = "movieCreditsUiStateCrossFade",
+                                            ) { uiState ->
+                                                when (uiState) {
+                                                    is UiState.Error -> {
+                                                        Toast.makeText(
+                                                                LocalContext.current,
+                                                                uiState.message,
+                                                                Toast.LENGTH_SHORT,
+                                                            )
+                                                            .show()
+                                                    }
+
+                                                    UiState.Loading -> {
+                                                        Box(
+                                                            modifier =
+                                                                Modifier.fillMaxSize()
+                                                                    .padding(all = 16.dp),
+                                                            contentAlignment = Alignment.Center,
+                                                        ) {
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier.width(48.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    is UiState.Success -> {
+                                                        val (actorsData, directorsData) =
+                                                            uiState.data
+
+                                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                                            Text(
+                                                                text =
+                                                                    stringResource(
+                                                                        R.string.associated_actors
+                                                                    ),
+                                                                modifier =
+                                                                    Modifier.fillMaxWidth()
+                                                                        .alpha(alpha = 0.87f)
+                                                                        .padding(
+                                                                            start = 16.dp,
+                                                                            top = 16.dp,
+                                                                            end = 16.dp,
+                                                                        ),
+                                                                color = colorScheme.onSurface,
+                                                                textAlign = TextAlign.Center,
+                                                                style = typography.titleLarge,
+                                                            )
+
+                                                            LazyRow(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                state = rememberLazyListState(),
+                                                                contentPadding =
+                                                                    PaddingValues(
+                                                                        start = 16.dp,
+                                                                        top = 16.dp,
+                                                                        end = 16.dp,
+                                                                    ),
+                                                                horizontalArrangement =
+                                                                    Arrangement.spacedBy(16.dp),
+                                                                verticalAlignment =
+                                                                    Alignment.CenterVertically,
+                                                            ) {
+                                                                items(
+                                                                    items = actorsData,
+                                                                    key = {
+                                                                        it.id
+                                                                            ?: "item_at_${actorsData.indexOf(it)}"
+                                                                    },
+                                                                ) { person ->
+                                                                    PersonCard(
+                                                                        person =
+                                                                            Person.Actor(person)
+                                                                    )
+                                                                }
+                                                            }
+
+                                                            Text(
+                                                                text =
+                                                                    stringResource(
+                                                                        R.string
+                                                                            .associated_directors
+                                                                    ),
+                                                                modifier =
+                                                                    Modifier.fillMaxWidth()
+                                                                        .alpha(alpha = 0.87f)
+                                                                        .padding(
+                                                                            start = 16.dp,
+                                                                            top = 16.dp,
+                                                                            end = 16.dp,
+                                                                        ),
+                                                                color = colorScheme.onSurface,
+                                                                textAlign = TextAlign.Center,
+                                                                style = typography.titleLarge,
+                                                            )
+
+                                                            LazyRow(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                state = rememberLazyListState(),
+                                                                contentPadding =
+                                                                    PaddingValues(
+                                                                        start = 16.dp,
+                                                                        top = 16.dp,
+                                                                        end = 16.dp,
+                                                                    ),
+                                                                horizontalArrangement =
+                                                                    Arrangement.spacedBy(16.dp),
+                                                                verticalAlignment =
+                                                                    Alignment.CenterVertically,
+                                                            ) {
+                                                                items(
+                                                                    items = directorsData,
+                                                                    key = {
+                                                                        it.id
+                                                                            ?: "item_at_${directorsData.indexOf(it)}"
+                                                                    },
+                                                                ) { person ->
+                                                                    PersonCard(
+                                                                        person =
+                                                                            Person.Director(person)
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-
-                        item {
-                            LaunchedEffect(Unit) {
-                                movieDetailsViewModel.fetchSimilarMoviesAndCast()
-                            }
-
-                            val movieCreditsUiState by
-                                movieDetailsViewModel.movieCreditsUiState.collectAsState()
-
-                            when (movieCreditsUiState) {
-                                is UiState.Error -> {}
-                                UiState.Loading -> {}
-                                is UiState.Success -> {
-                                    Text(
-                                        text = "Leading Stars of Similar Films",
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .alpha(alpha = 0.87f)
-                                                .padding(start = 16.dp, top = 16.dp, end = 16.dp),
-                                        color = colorScheme.onSurface,
-                                        textAlign = TextAlign.Center,
-                                        style = typography.titleLarge,
-                                    )
-
-                                    val actorsData =
-                                        (movieCreditsUiState
-                                                as
-                                                UiState.Success<
-                                                    Pair<
-                                                        List<MovieCastDto>,
-                                                        List<MovieCreditsCrewDto>,
-                                                    >
-                                                >)
-                                            .data
-                                            .first
-
-                                    LazyRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        state = rememberLazyListState(),
-                                        contentPadding =
-                                            PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        items(
-                                            items = actorsData,
-                                            key = { it.id ?: "item_at_${actorsData.indexOf(it)}" },
-                                        ) { actor ->
-                                            PersonCard(person = Person.Actor(actor))
-                                        }
-                                    }
-
-                                    Text(
-                                        text = "Top Directors Behind Similar Films",
-                                        modifier =
-                                            Modifier.fillMaxWidth()
-                                                .alpha(alpha = 0.87f)
-                                                .padding(start = 16.dp, top = 16.dp, end = 16.dp),
-                                        color = colorScheme.onSurface,
-                                        textAlign = TextAlign.Center,
-                                        style = typography.titleLarge,
-                                    )
-
-                                    val directorsData =
-                                        (movieCreditsUiState
-                                                as
-                                                UiState.Success<
-                                                    Pair<
-                                                        List<MovieCastDto>,
-                                                        List<MovieCreditsCrewDto>,
-                                                    >
-                                                >)
-                                            .data
-                                            .second
-
-                                    LazyRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        state = rememberLazyListState(),
-                                        contentPadding =
-                                            PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        items(
-                                            items = directorsData,
-                                            key = {
-                                                it.id ?: "item_at_${directorsData.indexOf(it)}"
-                                            },
-                                        ) { director ->
-                                            PersonCard(person = Person.Director(director))
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
-                }
-
-                val similarMoviesUiState by
-                    movieDetailsViewModel.similarMoviesUiState.collectAsState()
-
-                when (similarMoviesUiState) {
-                    is UiState.Error -> {
-                        LaunchedEffect(snackbarHostState) {
-                            snackbarHostState.showSnackbar(
-                                (similarMoviesUiState as UiState.Error).message,
-                                withDismissAction = true,
-                            )
-                        }
-                    }
-                    UiState.Loading -> {}
-                    is UiState.Success -> {}
-                }
-
-                val movieCreditsUiState by
-                    movieDetailsViewModel.movieCreditsUiState.collectAsState()
-
-                when (movieCreditsUiState) {
-                    is UiState.Error -> {
-                        LaunchedEffect(snackbarHostState) {
-                            snackbarHostState.showSnackbar(
-                                (movieCreditsUiState as UiState.Error).message,
-                                withDismissAction = true,
-                            )
-                        }
-                    }
-                    UiState.Loading -> {}
-                    is UiState.Success -> {}
                 }
             }
         }
