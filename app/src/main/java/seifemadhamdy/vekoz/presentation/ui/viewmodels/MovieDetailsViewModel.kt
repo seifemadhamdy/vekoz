@@ -7,12 +7,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import seifemadhamdy.vekoz.data.remote.dto.MovieCastDto
@@ -68,7 +65,7 @@ constructor(
 
     init {
         fetchMovieDetails()
-        viewModelScope.launch { isMovieInWatchlist().collect { _isMovieInWatchlist.update { it } } }
+        initializeWatchlistState()
     }
 
     fun fetchMovieDetails() {
@@ -163,6 +160,9 @@ constructor(
         }
     }
 
-    fun isMovieInWatchlist(): Flow<Boolean> =
-        flow { emit(watchlistRepository.isInWatchlist(movieId = movieId)) }.flowOn(Dispatchers.IO)
+    fun initializeWatchlistState() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isMovieInWatchlist.update { watchlistRepository.isInWatchlist(movieId = movieId) }
+        }
+    }
 }

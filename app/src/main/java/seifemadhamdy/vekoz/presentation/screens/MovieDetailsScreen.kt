@@ -194,6 +194,7 @@ fun MovieDetailsScreen(navHostController: NavHostController) {
                                                     HazeProgressive.verticalGradient(
                                                         startIntensity = 1f,
                                                         endIntensity = 0f,
+                                                        preferPerformance = true,
                                                     )
                                             }
                                     )
